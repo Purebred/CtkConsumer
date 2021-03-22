@@ -17,27 +17,41 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" misplaced="YES" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="8ff-c9-K6E">
-                                <rect key="frame" x="152" y="348" width="142" height="90"/>
+                                <rect key="frame" x="152" y="348" width="187" height="150"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yk8-0o-7hu">
-                                        <rect key="frame" x="0.0" y="0.0" width="142" height="30"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="187" height="30"/>
                                         <state key="normal" title="Collect Identities"/>
                                         <connections>
                                             <action selector="onCollectIds:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Tor-Iu-7fv"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EEe-fE-qD1">
-                                        <rect key="frame" x="0.0" y="30" width="142" height="30"/>
+                                        <rect key="frame" x="0.0" y="30" width="187" height="30"/>
                                         <state key="normal" title="Sign and Verify"/>
                                         <connections>
                                             <action selector="onSign:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zcc-8s-gda"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="E6b-Mc-zNb">
-                                        <rect key="frame" x="0.0" y="60" width="142" height="30"/>
+                                        <rect key="frame" x="0.0" y="60" width="187" height="30"/>
                                         <state key="normal" title="Encrypt and Decrypt"/>
                                         <connections>
                                             <action selector="onDecrypt:" destination="BYZ-38-t0r" eventType="touchUpInside" id="HaR-xT-YP6"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="P1D-fh-ZGd">
+                                        <rect key="frame" x="0.0" y="90" width="187" height="30"/>
+                                        <state key="normal" title="Sign one key, many algs"/>
+                                        <connections>
+                                            <action selector="onManySign:" destination="BYZ-38-t0r" eventType="touchUpInside" id="OcR-sq-7c8"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0k7-WB-xky">
+                                        <rect key="frame" x="0.0" y="120" width="187" height="30"/>
+                                        <state key="normal" title="Encrypt one key, many algs"/>
+                                        <connections>
+                                            <action selector="onManyEnc:" destination="BYZ-38-t0r" eventType="touchUpInside" id="SUh-Bz-KqB"/>
                                         </connections>
                                     </button>
                                 </subviews>

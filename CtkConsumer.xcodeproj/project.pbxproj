@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55EA6F352539C1480088DE36 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 55EA6F342539C1480088DE36 /* AppDelegate.m */; };
+		55EA6F352539C1480088DE36 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 55EA6F342539C1480088DE36 /* AppDelegate.mm */; };
 		55EA6F382539C1480088DE36 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 55EA6F372539C1480088DE36 /* SceneDelegate.m */; };
 		55EA6F3B2539C1480088DE36 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 55EA6F3A2539C1480088DE36 /* ViewController.mm */; };
 		55EA6F3E2539C1480088DE36 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 55EA6F3C2539C1480088DE36 /* Main.storyboard */; };
@@ -19,7 +19,7 @@
 /* Begin PBXFileReference section */
 		55EA6F302539C1480088DE36 /* CtkConsumer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CtkConsumer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55EA6F332539C1480088DE36 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		55EA6F342539C1480088DE36 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		55EA6F342539C1480088DE36 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		55EA6F362539C1480088DE36 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		55EA6F372539C1480088DE36 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		55EA6F392539C1480088DE36 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
@@ -64,7 +64,7 @@
 			children = (
 				55EA6F4D2539C1570088DE36 /* CtkConsumer.entitlements */,
 				55EA6F332539C1480088DE36 /* AppDelegate.h */,
-				55EA6F342539C1480088DE36 /* AppDelegate.m */,
+				55EA6F342539C1480088DE36 /* AppDelegate.mm */,
 				55EA6F362539C1480088DE36 /* SceneDelegate.h */,
 				55EA6F372539C1480088DE36 /* SceneDelegate.m */,
 				55EA6F392539C1480088DE36 /* ViewController.h */,
@@ -148,7 +148,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				55EA6F3B2539C1480088DE36 /* ViewController.mm in Sources */,
-				55EA6F352539C1480088DE36 /* AppDelegate.m in Sources */,
+				55EA6F352539C1480088DE36 /* AppDelegate.mm in Sources */,
 				55EA6F462539C14A0088DE36 /* main.m in Sources */,
 				55EA6F382539C1480088DE36 /* SceneDelegate.m in Sources */,
 			);

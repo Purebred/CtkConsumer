@@ -17,5 +17,8 @@
 - (IBAction)onCollectIds:(id)sender;
 - (IBAction)onSign:(id)sender;
 - (IBAction)onDecrypt:(id)sender;
+- (IBAction)onManySign:(id)sender;
+- (IBAction)onManyEnc:(id)sender;
 @end
 
+void InitAlgArray();

@@ -11,14 +11,14 @@
 #include <vector>
 
 NSMutableArray* algs = nil;
-SecPadding paddings[5] = {
+SecPadding paddings[6] = {
     //kSecPaddingPKCS1,
     kSecPaddingPKCS1SHA1,
     kSecPaddingPKCS1SHA224,
     kSecPaddingPKCS1SHA256,
     kSecPaddingPKCS1SHA384,
     kSecPaddingPKCS1SHA512,
-    //kSecPaddingNone,
+    kSecPaddingNone
     //kSecPaddingOAEP
 };
 
@@ -33,7 +33,8 @@ SecPadding encpaddings[3] = {
     kSecPaddingOAEP
 };
 
-SecKeyAlgorithm rsaSigAlgsDigest[10] = {
+SecKeyAlgorithm rsaSigAlgsDigest[11] = {
+    kSecKeyAlgorithmRSASignatureDigestPKCS1v15Raw,
     kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
     kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA224,
     kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA256,
@@ -44,10 +45,10 @@ SecKeyAlgorithm rsaSigAlgsDigest[10] = {
     kSecKeyAlgorithmRSASignatureDigestPSSSHA224,
     kSecKeyAlgorithmRSASignatureDigestPSSSHA256,
     kSecKeyAlgorithmRSASignatureDigestPSSSHA384,
-    kSecKeyAlgorithmRSASignatureDigestPSSSHA512,
+    kSecKeyAlgorithmRSASignatureDigestPSSSHA512
 };
 SecKeyAlgorithm rsaSigAlgsMessage[11] = {
-    kSecKeyAlgorithmRSASignatureDigestPKCS1v15Raw,
+    kSecKeyAlgorithmRSASignatureRaw,
     kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA1,
     kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA224,
     kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256,
@@ -58,6 +59,21 @@ SecKeyAlgorithm rsaSigAlgsMessage[11] = {
     kSecKeyAlgorithmRSASignatureMessagePSSSHA256,
     kSecKeyAlgorithmRSASignatureMessagePSSSHA384,
     kSecKeyAlgorithmRSASignatureMessagePSSSHA512
+};
+
+SecKeyAlgorithm rsaEncAlgs[12] {
+    kSecKeyAlgorithmRSAEncryptionRaw,
+    kSecKeyAlgorithmRSAEncryptionPKCS1,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA1,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA224,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA256,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA384,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA512,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA1AESGCM,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA224AESGCM,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA256AESGCM,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA384AESGCM,
+    kSecKeyAlgorithmRSAEncryptionOAEPSHA512AESGCM
 };
 
 void InitAlgArray()
@@ -275,6 +291,28 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
     std::vector<SecIdentityRef>::iterator pos = identitiesEnc.begin();
     SecIdentityRef cur = (*pos);
 
+    SecCertificateRef certificateRef = nil;
+    OSStatus status = SecIdentityCopyCertificate(cur, &certificateRef);
+    if(errSecSuccess != status) {
+        NSLog(@"CtkConsumer log: SecIdentityCopyCertificate failed %i\n", status);
+        CFRelease(certificateRef);
+        return;
+    }
+
+    CFStringRef commonName;
+    status = SecCertificateCopyCommonName(certificateRef, &commonName);
+    NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
+
+    SecKeyRef privateKeyRef = nil;
+    status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
+    if(errSecSuccess != status) {
+        NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey failed %i\n", status);
+        CFRelease(privateKeyRef);
+        return;
+    }
+    
+    SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
+
     //SecPadding padding = kSecPaddingPKCS1;
 
     for(int ii = 0; ii < 3; ++ii){
@@ -282,69 +320,107 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         ++count;
         NSLog(@"CtkConsumer log: %i\n", count);
         cur = (*pos);
-        
-        SecKeyRef privateKeyRef = nil;
-        OSStatus status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
-        NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
-        if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            continue;
-        }
-        
-        SecCertificateRef certificateRef = nil;
-        status = SecIdentityCopyCertificate(cur, &certificateRef);
-        NSLog(@"CtkConsumer log: SecIdentityCopyCertificate result %i\n", status);
-        if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
-            continue;
-        }
-        
-        CFStringRef commonName;
-        status = SecCertificateCopyCommonName(certificateRef, &commonName);
-        NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
-
-        SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
 
         NSData* dataToSign = [[NSData alloc]initWithBytes:"abc" length:3];
         unsigned char result[CC_SHA256_DIGEST_LENGTH];
         CC_SHA256([dataToSign bytes], (unsigned int)[dataToSign length], result);
-        
+
         uint8_t cipher[256];
         size_t cipherLen = 256;
-        
+
         status = SecKeyEncrypt(publicKeyRef, padding, result, CC_SHA256_DIGEST_LENGTH, cipher, &cipherLen);
         NSLog(@"CtkConsumer log: SecKeyEncrypt result %i\n", status);
         if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
-            CFRelease(publicKeyRef);
             continue;
         }
-        
+
         uint8_t plain[256];
         size_t plainLen = 256;
 
         status = SecKeyDecrypt(privateKeyRef, padding, cipher, cipherLen, plain, &plainLen);
         NSLog(@"CtkConsumer log: SecKeyDecrypt result %i\n", status);
         if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
-        
+
         if(0 != memcmp(result, plain, plainLen)) {
             NSLog(@"CtkConsumer log: SecKeyDecrypt returned unexpected plaintext\n");
         }
         else {
             NSLog(@"CtkConsumer log: SecKeyDecrypt returned expected plaintext\n");
         }
+    }
+    
+    for(int ii = 0; ii < 12; ++ii)
+    {
+        SecKeyAlgorithm curska = rsaEncAlgs[ii];
+        ++count;
+        NSLog(@"CtkConsumer log: %i - %@\n", count, curska);
+        cur = (*pos);
         
-        CFRelease(privateKeyRef);
-        CFRelease(publicKeyRef);
-        CFRelease(certificateRef);
-    }}
+        NSData* dataToSign = [[NSData alloc]initWithBytes:"abc" length:3];
+        unsigned char result[CC_SHA256_DIGEST_LENGTH];
+        CC_SHA256([dataToSign bytes], (unsigned int)[dataToSign length], result);
+
+        BOOL canEnc = SecKeyIsAlgorithmSupported(publicKeyRef, kSecKeyOperationTypeEncrypt, curska);
+        if(!canEnc) {
+            NSLog(@"CtkConsumer log: SecKeyIsAlgorithmSupported returned false for kSecKeyOperationTypeEncrypt and %@\n", curska);
+            continue;
+        }
+        
+        CFDataRef cfplaintext = CFDataCreate(NULL, result, CC_SHA256_DIGEST_LENGTH);
+        if(!cfplaintext)
+        {
+            NSLog(@"CtkConsumer log: CFDataCreate failed for plaintext value\n");
+            continue;
+        }
+
+        CFErrorRef cferror = nil;
+        CFDataRef cfciphertext = SecKeyCreateEncryptedData(publicKeyRef, curska, cfplaintext, &cferror);
+
+        CFRelease(cfplaintext);
+        if(cferror)CFRelease(cferror);
+
+        if(!cfciphertext) {
+            NSLog(@"CtkConsumer log: SecKeyCreateEncryptedData failed\n");
+            if(cferror)CFRelease(cferror);
+            continue;
+        }
+        else {
+            NSLog(@"CtkConsumer log: SecKeyCreateEncryptedData succeeded\n");
+        }
+
+        cfplaintext = SecKeyCreateDecryptedData(privateKeyRef, curska, cfciphertext, &cferror);
+        if(!cfplaintext) {
+            NSLog(@"CtkConsumer log: SecKeyCreateDecryptedData failed\n");
+            if(cferror)CFRelease(cferror);
+        }
+        else {
+            unsigned char* pPlain = (unsigned char*)(CFDataGetBytePtr(cfplaintext));
+            CFIndex plainLen = CFDataGetLength(cfplaintext);
+            
+            if(plainLen != CC_SHA256_DIGEST_LENGTH || 0 != memcmp(pPlain, result, CC_SHA256_DIGEST_LENGTH)){
+                
+                // Because we are not passing in data the size of the modulus, the plaintext gets padded with leading zeroes before encrypting
+                // by SecKeyCreateEncryptedData. Those leading zeroes are returned here. Skip them when doing kSecKeyAlgorithmRSAEncryptionRaw.
+                if(curska == kSecKeyAlgorithmRSAEncryptionRaw && 0 != memcmp(&pPlain[plainLen-CC_SHA256_DIGEST_LENGTH], result, CC_SHA256_DIGEST_LENGTH)) {
+                    NSLog(@"CtkConsumer log: Recovered plaintext is not correct");
+                }
+                else if(curska != kSecKeyAlgorithmRSAEncryptionRaw) {
+                    NSLog(@"CtkConsumer log: Recovered plaintext is not correct");
+                }
+            }
+            else
+                NSLog(@"CtkConsumer log: SecKeyCreateDecryptedData succeeded\n");
+
+            CFRelease(cfplaintext);
+            CFRelease(cfciphertext);
+        }
+    }
+    CFRelease(privateKeyRef);
+    CFRelease(publicKeyRef);
+    CFRelease(certificateRef);
+}
 
 - (IBAction)onManySign:(id)sender {
     NSLog(@"CtkConsumer log: begin onManySign\n");
@@ -355,34 +431,35 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
     std::vector<SecIdentityRef>::iterator pos = identitiesSign.begin();
     SecIdentityRef cur = (*pos);
 
+    SecCertificateRef certificateRef = nil;
+    OSStatus status = SecIdentityCopyCertificate(cur, &certificateRef);
+    if(errSecSuccess != status) {
+        NSLog(@"CtkConsumer log: SecIdentityCopyCertificate failed %i\n", status);
+        if(certificateRef) CFRelease(certificateRef);
+        return;
+    }
+
+    CFStringRef commonName;
+    status = SecCertificateCopyCommonName(certificateRef, &commonName);
+    NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
+
     //SecPadding padding = kSecPaddingPKCS1SHA256;
 
-    for(int ii = 0; ii < 5; ++ii){
+    SecKeyRef privateKeyRef = nil;
+    status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
+    if(errSecSuccess != status) {
+        NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
+        CFRelease(privateKeyRef);
+        return;
+    }
+
+    SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
+
+    for(int ii = 0; ii < 6; ++ii){
         SecPadding padding = paddings[ii];
         ++count;
         NSLog(@"CtkConsumer log: padding alg %i\n", padding);
         
-        SecKeyRef privateKeyRef = nil;
-        OSStatus status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
-            CFRelease(privateKeyRef);
-            continue;
-        }
-        
-        SecCertificateRef certificateRef = nil;
-        status = SecIdentityCopyCertificate(cur, &certificateRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyCertificate result %i\n", status);
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
-            continue;
-        }
-
-        CFStringRef commonName;
-        status = SecCertificateCopyCommonName(certificateRef, &commonName);
-        NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
-
         NSData* dataToSign = [[NSData alloc]initWithBytes:"abc" length:3];
         unsigned char result[CC_SHA512_DIGEST_LENGTH];
         int hashLen = CC_SHA512_DIGEST_LENGTH;
@@ -413,23 +490,14 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         status = SecKeyRawSign(privateKeyRef, padding, result, hashLen, sig, &sigLen);
         NSLog(@"CtkConsumer log: SecKeyRawSign result %i\n", status);
         if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
 
-        SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
         status = SecKeyRawVerify(publicKeyRef, padding, result, hashLen, sig, sigLen);
         NSLog(@"CtkConsumer log: SecKeyRawVerify result %i\n", status);
         if(errSecSuccess != status) {
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
-        CFRelease(privateKeyRef);
-        CFRelease(publicKeyRef);
-        CFRelease(certificateRef);
     }
 
     count = 0;
@@ -439,27 +507,6 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         ++count;
         NSLog(@"CtkConsumer log: message alg %@\n", alg);
         
-        SecKeyRef privateKeyRef = nil;
-        OSStatus status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
-            CFRelease(privateKeyRef);
-            continue;
-        }
-        
-        SecCertificateRef certificateRef = nil;
-        status = SecIdentityCopyCertificate(cur, &certificateRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyCertificate result %i\n", status);
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
-            continue;
-        }
-
-        CFStringRef commonName;
-        status = SecCertificateCopyCommonName(certificateRef, &commonName);
-        NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
-
         NSData* dataToSign = [[NSData alloc]initWithBytes:"abc" length:3];
 
         BOOL canSign = SecKeyIsAlgorithmSupported(privateKeyRef,
@@ -468,8 +515,6 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         if(!canSign)
         {
             NSLog(@"CtkConsumer log: SecKeyIsAlgorithmSupported returned false for kSecKeyOperationTypeSign");
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
 
@@ -477,68 +522,34 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         CFDataRef cfsignature = SecKeyCreateSignature(privateKeyRef, alg, (CFDataRef)dataToSign, &cferror);
         if(!cfsignature) {
             NSLog(@"CtkConsumer log: SecKeyCreateSignature result %i\n", status);
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         NSLog(@"CtkConsumer log: SecKeyCreateSignature succeeded\n");
 
-        SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
-        
         BOOL canVerify = SecKeyIsAlgorithmSupported(publicKeyRef,
                                                     kSecKeyOperationTypeVerify,
                                                     alg);
         if(!canVerify)
         {
             NSLog(@"CtkConsumer log: SecKeyIsAlgorithmSupported returned false for kSecKeyOperationTypeVerify");
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         bool b = SecKeyVerifySignature(publicKeyRef, alg, (CFDataRef)dataToSign, cfsignature, &cferror);
         if(!b) {
             NSError* e = (__bridge_transfer NSError*)cferror;
             NSLog(@"CtkConsumer log: SecKeyVerifySignature failed: %@", [e localizedDescription]);
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         NSLog(@"CtkConsumer log: SecKeyVerifySignature succeeded\n");
-        CFRelease(privateKeyRef);
-        CFRelease(publicKeyRef);
-        CFRelease(certificateRef);
     }
-    
+
     count = 0;
-    for(int ii = 0; ii < 10; ++ii){
+    for(int ii = 0; ii < 11; ++ii){
         SecKeyAlgorithm alg = rsaSigAlgsDigest[ii];
 
         ++count;
         NSLog(@"CtkConsumer log: digest alg %@\n", alg);
         
-        SecKeyRef privateKeyRef = nil;
-        OSStatus status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
-            CFRelease(privateKeyRef);
-            continue;
-        }
-        
-        SecCertificateRef certificateRef = nil;
-        status = SecIdentityCopyCertificate(cur, &certificateRef);
-        if(errSecSuccess != status) {
-            NSLog(@"CtkConsumer log: SecIdentityCopyCertificate result %i\n", status);
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
-            continue;
-        }
-
-        CFStringRef commonName;
-        status = SecCertificateCopyCommonName(certificateRef, &commonName);
-        NSLog(@"CtkConsumer log: common name = %@\n", (__bridge NSString*)commonName);
-
         NSData* dataToSign = [[NSData alloc]initWithBytes:"abc" length:3];
 
         unsigned char result[CC_SHA512_DIGEST_LENGTH];
@@ -578,8 +589,6 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         if(!canSign)
         {
             NSLog(@"CtkConsumer log: SecKeyIsAlgorithmSupported returned false for kSecKeyOperationTypeSign");
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
 
@@ -587,39 +596,29 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         CFDataRef cfsignature = SecKeyCreateSignature(privateKeyRef, alg, (CFDataRef)hashedData, &cferror);
         if(!cfsignature) {
             NSLog(@"CtkConsumer log: SecKeyCreateSignature result %i\n", status);
-            CFRelease(privateKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         NSLog(@"CtkConsumer log: SecKeyCreateSignature succeeded\n");
 
-        SecKeyRef publicKeyRef = SecCertificateCopyKey(certificateRef);
-        
         BOOL canVerify = SecKeyIsAlgorithmSupported(publicKeyRef,
                                                     kSecKeyOperationTypeVerify,
                                                     alg);
         if(!canVerify)
         {
             NSLog(@"CtkConsumer log: SecKeyIsAlgorithmSupported returned false for kSecKeyOperationTypeVerify");
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         bool b = SecKeyVerifySignature(publicKeyRef, alg, (CFDataRef)hashedData, cfsignature, &cferror);
         if(!b) {
             NSError* e = (__bridge_transfer NSError*)cferror;
             NSLog(@"CtkConsumer log: SecKeyVerifySignature failed: %@", [e localizedDescription]);
-            CFRelease(privateKeyRef);
-            CFRelease(publicKeyRef);
-            CFRelease(certificateRef);
             continue;
         }
         NSLog(@"CtkConsumer log: SecKeyVerifySignature succeeded\n");
-        CFRelease(privateKeyRef);
-        CFRelease(publicKeyRef);
-        CFRelease(certificateRef);
     }
+    CFRelease(privateKeyRef);
+    CFRelease(publicKeyRef);
+    CFRelease(certificateRef);
 }
 
 - (IBAction)onDecrypt:(id)sender {
@@ -721,7 +720,6 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         
         SecKeyRef privateKeyRef = nil;
         OSStatus status = SecIdentityCopyPrivateKey(cur, &privateKeyRef);
-        NSLog(@"CtkConsumer log: SecIdentityCopyPrivateKey result %i\n", status);
         if(errSecSuccess != status) {
             CFRelease(privateKeyRef);
             continue;
@@ -729,7 +727,6 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
         
         SecCertificateRef certificateRef = nil;
         status = SecIdentityCopyCertificate(cur, &certificateRef);
-        NSLog(@"CtkConsumer log: SecIdentityCopyCertificate result %i\n", status);
         if(errSecSuccess != status) {
             CFRelease(privateKeyRef);
             CFRelease(certificateRef);
