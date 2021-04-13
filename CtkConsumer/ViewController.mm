@@ -769,6 +769,9 @@ void GetAllKeys(std::vector<SecKeyRef>& identities)
 - (IBAction)onCollectIds:(id)sender {
     NSLog(@"CtkConsumer log: begin onCollectIds\n");
     
+    identitiesSign.clear();
+    identitiesEnc.clear();
+
     // Collect up all the IDs once
     GetAllIdentities(identitiesSign, true, false);
     GetAllIdentities(identitiesEnc, false, true);
