@@ -4,5 +4,5 @@ The CtkConsumer sample demonstrates the use of keys accessed via a Persistent To
 
 Bundle identifiers need to be updated to reflect bundle identifiers associated with the signer. These include:
 
-Bundle Identifier for CtkConsumer
-keychain-access-groups for CtkConsumer
+Bundle Identifier for CtkConsumer  
+keychain-access-groups for CtkConsumer  
